@@ -1,0 +1,114 @@
+POST http://localhost:3000/api/orders
+Content-Type: application/json
+
+{
+  "tableId": "1",
+  "total": 2400,
+  "comment": "Sans oignons",
+  "items": [
+    { "name": "Bo Bun Bœuf" },
+    { "name": "Nems (4p)" }
+  ]
+}
+### GET ping (test connexion)
+GET http://127.0.0.1:3000/api/ping
+
+### POST créer une commande
+POST http://127.0.0.1:3000/api/orders
+Content-Type: application/json
+
+{
+  "tableId": "1",
+  "total": 2400,
+  "comment": "Sans oignons",
+  "items": [
+    { "name": "Bo Bun Bœuf" },
+    { "name": "Nems (4p)" }
+  ]
+}
+### GET lister les commandes
+GET http://127.0.0.1:3000/api/orders
+
+### GET ping
+GET http://127.0.0.1:3000/api/ping
+
+### POST créer une commande
+POST http://127.0.0.1:3000/api/orders
+Content-Type: application/json
+
+{
+  "tableId": "1",
+  "total": 2400,
+  "comment": "Sans oignons",
+  "items": [
+    { "name": "Bo Bun Bœuf" },
+    { "name": "Nems (4p)" }
+  ]
+}
+
+### GET lister
+GET http://127.0.0.1:3000/api/orders
+
+### POST créer une commande
+POST http://127.0.0.1:3000/api/orders
+Content-Type: application/json
+
+{
+  "tableId": "1",
+  "total": 2400,
+  "comment": "Sans oignons",
+  "items": [
+    { "name": "Bo Bun Bœuf" },
+    { "name": "Nems (4p)" }
+  ]
+}
+
+### GET lister
+GET http://127.0.0.1:3000/api/orders
+
+### POST créer une commande
+POST http://127.0.0.1:3000/api/orders
+Content-Type: application/json
+
+{
+  "tableId": "1",
+  "total": 2400,
+  "comment": "Sans oignons",
+  "items": [
+    { "name": "Bo Bun Bœuf" },
+    { "name": "Nems (4p)" }
+  ]
+  ### Voir commandes
+GET http://127.0.0.1:3000/api/orders
+
+### Passer à READY (remplace l'id)
+PATCH http://127.0.0.1:3000/api/orders/TON_ID
+Content-Type: application/json
+
+  ### Passer à READY cmgqr3yp8000fg7d0qblxjme8
+PATCH http://127.0.0.1:3000/api/orders/TON_ID
+Content-Type: application/json
+
+### PATCH cmgqr3yp8000fg7d0qblxjme8 
+http://127.0.0.1:3001/api/orders/TON_ID
+Content-Type: application/json
+
+{ "status": "READY" }
+
+### PATCH passer la commande à READY
+PATCH http://127.0.0.1:3001/api/orders/cmgqr3yp8000fg7d0qblxjme8
+Content-Type: application/json
+
+{ "status": "READY" }
+
+PATCH http://127.0.0.1:3001/api/orders/cmgqr3yp8000fg7d0qblxjme8
+Content-Type: application/json
+
+{ "status": "READY" }
+
+PATCH 
+http://127.0.0.1:3001/api/orders/cmgqr3yp8000fg7d0qblxjme8
+Content-Type: application/json
+
+{ "status": "READY" }
+

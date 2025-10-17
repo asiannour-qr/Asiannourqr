@@ -1,0 +1,28 @@
+{
+    "files.associations": {
+        "*.css": "css"
+    },
+    "css.validate": false,
+    "scss.validate": false,
+    "less.validate": false,
+    "css.lint.unknownAtRules": "ignore",
+    "scss.lint.unknownAtRules": "ignore",
+    "less.lint.unknownAtRules": "ignore",
+    "tailwindCSS.emmetCompletions": true,
+    "github.branchProtection": false,
+    "github.gitAuthentication": false,
+    "github.showAvatar": false,
+    "search.exclude": {
+        "store.json": true,
+        "lib/store.ts": true,
+        "app/api/session/create/route.ts": true,
+        "app/api/session/join/route.ts": true,
+        "app/api/kitchen/page.tsx": true,
+        "app/api/kitchen/status/route.ts": true,
+        "lib/orders.ts": true,
+        "app/menu/route.ts": true,
+        "app/test-audio/page.tsx": true,
+        "scripts/seed-menu.js": true,
+        "data/products.ts.save": true
+    }
+}
