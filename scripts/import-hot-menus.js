@@ -2,7 +2,6 @@
 // Idempotent upsert des menus chauds « Asian ... » avec Prisma.
 
 const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
 
 const HOT_MENU_DEFS = [
   {
@@ -110,7 +109,7 @@ const COLD_MENU_DESCRIPTIONS = [
   },
 ];
 
-async function ensureMenuItem({ name, category, priceCents = 0, position = 0 }) {
+async function ensureMenuItem(prisma, { name, category, priceCents = 0, position = 0 }) {
   const existing = await prisma.menuItem.findFirst({ where: { name } });
   if (existing) {
     const data = {};
@@ -135,13 +134,13 @@ async function ensureMenuItem({ name, category, priceCents = 0, position = 0 }) 
   return created.id;
 }
 
-async function ensureBaseItems() {
+async function ensureBaseItems(prisma) {
   for (const item of REQUIRED_ITEMS) {
-    await ensureMenuItem(item);
+    await ensureMenuItem(prisma, item);
   }
 }
 
-async function ensureColdMenuDescriptions() {
+async function ensureColdMenuDescriptions(prisma) {
   for (const def of COLD_MENU_DESCRIPTIONS) {
     const record = await prisma.menuItem.findFirst({
       where: { name: def.name, category: "Menus Froids" },
@@ -155,7 +154,7 @@ async function ensureColdMenuDescriptions() {
   }
 }
 
-async function upsertMenu(def) {
+async function upsertMenu(prisma, def) {
   let menuId;
   let created = false;
 
@@ -234,19 +233,29 @@ async function upsertMenu(def) {
     }
   }
 
-  return { created, groupsCreated, groupsUpdated };
+  const groups = await prisma.menuGroup.findMany({
+    where: { menuId },
+    orderBy: { position: "asc" },
+  });
+
+  return { created, groupsCreated, groupsUpdated, groups };
 }
 
-async function main() {
+async function seedHotMenus(prisma, { deactivateLegacy = true } = {}) {
+  if (!prisma || typeof prisma !== "object") {
+    throw new Error("A PrismaClient instance is required");
+  }
+
   let menusCreated = 0;
   let groupsCreated = 0;
   let groupsUpdated = 0;
+  const menuSummaries = [];
 
-  await ensureBaseItems();
-  await ensureColdMenuDescriptions();
+  await ensureBaseItems(prisma);
+  await ensureColdMenuDescriptions(prisma);
 
   for (const def of HOT_MENU_DEFS) {
-    const result = await upsertMenu({
+    const result = await upsertMenu(prisma, {
       name: def.name,
       priceCents: def.priceCents,
       position: def.position,
@@ -255,28 +264,63 @@ async function main() {
     if (result.created) menusCreated += 1;
     groupsCreated += result.groupsCreated;
     groupsUpdated += result.groupsUpdated;
-  }
-
-  const totalMenus = HOT_MENU_DEFS.length;
-  const totalGroups = groupsCreated + groupsUpdated;
-  console.log(
-    `✅ Menus chauds importés (${totalMenus} menus, ${totalGroups} groupes synchronisés, ${menusCreated} créés)`
-  );
-
-  const legacyNames = ["Asian Duo", "Asian Mix", "Asian Gourmand"];
-  if (legacyNames.length > 0) {
-    await prisma.menu.updateMany({
-      where: { name: { in: legacyNames } },
-      data: { active: false },
+    menuSummaries.push({
+      name: def.name,
+      priceCents: def.priceCents,
+      position: def.position,
+      created: result.created,
+      groupsCreated: result.groupsCreated,
+      groupsUpdated: result.groupsUpdated,
+      groups: result.groups,
     });
   }
+
+  if (deactivateLegacy) {
+    const legacyNames = ["Asian Duo", "Asian Mix", "Asian Gourmand"];
+    if (legacyNames.length > 0) {
+      await prisma.menu.updateMany({
+        where: { name: { in: legacyNames } },
+        data: { active: false },
+      });
+    }
+  }
+
+  return {
+    totalMenus: HOT_MENU_DEFS.length,
+    menusCreated,
+    groupsCreated,
+    groupsUpdated,
+    menuSummaries,
+  };
 }
 
-main()
-  .catch((e) => {
-    console.error("❌ Import des menus chauds échoué:", e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+module.exports = {
+  seedHotMenus,
+  HOT_MENU_DEFS,
+  REQUIRED_ITEMS,
+  COLD_MENU_DESCRIPTIONS,
+};
+
+if (require.main === module) {
+  const prisma = new PrismaClient();
+  seedHotMenus(prisma)
+    .then((summary) => {
+      const totalGroups = summary.groupsCreated + summary.groupsUpdated;
+      console.log(
+        `✅ Menus chauds importés (${summary.totalMenus} menus, ${totalGroups} groupes synchronisés, ${summary.menusCreated} créés)`
+      );
+      for (const menu of summary.menuSummaries) {
+        const euro = (menu.priceCents / 100).toFixed(2);
+        console.log(
+          ` - ${menu.name} (${euro}€) • groupes: ${menu.groups.length} (créés: ${menu.groupsCreated}, mis à jour: ${menu.groupsUpdated})`
+        );
+      }
+    })
+    .catch((e) => {
+      console.error("❌ Import des menus chauds échoué:", e);
+      process.exitCode = 1;
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

@@ -12,7 +12,8 @@
     "prisma:generate": "prisma generate",
     "migrate:deploy": "prisma migrate deploy",
     "prisma:deploy": "prisma migrate deploy",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "seed:hot": "node scripts/seed-hot-menus.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.18.0",
