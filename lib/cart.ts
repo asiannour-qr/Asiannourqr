@@ -1,4 +1,4 @@
-// lib/cart.ts
+import { useSyncExternalStore } from "react";
 
 export type CartItem = {
   id: string;
@@ -14,13 +14,37 @@ export type Cart = {
   items: CartItem[];
   updatedAt: number;
   peopleCount?: number;   // nb de convives
-  tableComment?: string;  // commentaire global de table
+  tableComment?: string | null;  // commentaire global de table
 };
 
 // ----- Store mémoire global (dev) -----
 const g = globalThis as any;
 if (!g.__CARTS__) g.__CARTS__ = new Map<string, Cart>();
 const CARTS: Map<string, Cart> = g.__CARTS__;
+
+type TableCommentListener = () => void;
+
+export let tableComment: string | null = null;
+const tableCommentListeners = new Set<TableCommentListener>();
+
+function subscribeTableComment(listener: TableCommentListener) {
+  tableCommentListeners.add(listener);
+  return () => {
+    tableCommentListeners.delete(listener);
+  };
+}
+
+function emitTableComment() {
+  for (const listener of tableCommentListeners) listener();
+}
+
+function getTableCommentSnapshot() {
+  return tableComment;
+}
+
+export function useTableComment() {
+  return useSyncExternalStore(subscribeTableComment, getTableCommentSnapshot, getTableCommentSnapshot);
+}
 
 // Récupère (ou crée) le panier d'une table
 export function getCart(tableId: string): Cart {
@@ -31,7 +55,7 @@ export function getCart(tableId: string): Cart {
     items: [],
     updatedAt: Date.now(),
     peopleCount: 1,
-    tableComment: ""
+    tableComment: null
   };
   CARTS.set(tableId, fresh);
   return fresh;
@@ -45,11 +69,22 @@ export function setPeopleCount(tableId: string, count: number) {
   return cart;
 }
 
-// Définit le commentaire global de table
-export function setTableComment(tableId: string, text: string) {
+export function setTableComment(value: string | null): void;
+export function setTableComment(tableId: string, text: string): Cart;
+// Définit le commentaire global de table ou met à jour le store client
+export function setTableComment(arg1: string | null, arg2?: string) {
+  if (arg2 === undefined && (typeof arg1 === "string" || arg1 === null)) {
+    tableComment = arg1 ?? null;
+    emitTableComment();
+    return;
+  }
+  const tableId = String(arg1);
   const cart = getCart(tableId);
-  cart.tableComment = (text ?? "").slice(0, 300);
+  const text = (arg2 ?? "").slice(0, 300);
+  cart.tableComment = text || null;
   cart.updatedAt = Date.now();
+  tableComment = cart.tableComment ?? null;
+  emitTableComment();
   return cart;
 }
 
@@ -92,8 +127,12 @@ export function changeQty(
 export function clearCart(tableId: string) {
   const cart = getCart(tableId);
   cart.items = [];
-  cart.tableComment = ""; // <<< important : on efface le commentaire global
+  cart.tableComment = null; // <<< important : on efface le commentaire global
   cart.updatedAt = Date.now();
+  if (tableComment !== null) {
+    tableComment = null;
+    emitTableComment();
+  }
   return cart;
 }
 

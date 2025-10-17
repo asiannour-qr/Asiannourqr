@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
+import { setTableComment, useTableComment } from "@/lib/cart";
 
 type MenuItem = {
     id: string;
@@ -67,13 +68,13 @@ export default function TablePage() {
     const [loading, setLoading] = useState(true);
 
     const [cart, setCart] = useState<CartLine[]>([]);
-    const [comment, setComment] = useState("");
     const [peopleCount, setPeopleCount] = useState<number>(1);
     const [composeState, setComposeState] = useState<ComposeState | null>(null);
     const [composeErrors, setComposeErrors] = useState<Record<string, string>>({});
     const [activePerson, setActivePerson] = useState<string>("P1");
     const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
     const [expandedPersons, setExpandedPersons] = useState<Set<string>>(() => new Set());
+    const tableComment = useTableComment();
 
     async function loadAll() {
         setLoading(true);
@@ -331,7 +332,7 @@ export default function TablePage() {
 
     function clearEntireCart() {
         setCart([]);
-        setComment("");
+        setTableComment(null);
         setCartDrawerOpen(false);
         setExpandedPersons(new Set());
     }
@@ -552,15 +553,21 @@ export default function TablePage() {
     async function submitOrder() {
         if (cart.length === 0) return toast.error("Panier vide");
         try {
+            const sanitizedComment = (tableComment ?? "").trim();
             const payload = {
                 tableId: String(tableId),
                 total: totalCents,
-                comment: comment.trim() || null,
+                tableComment: sanitizedComment ? sanitizedComment : null,
                 peopleCount: Math.max(1, Math.min(12, Number(peopleCount) || 1)),
-                items: cart.map((l) => ({ name: String(l.name), qty: Number(l.qty) })),
+                items: cart.map((l) => ({
+                    name: String(l.name),
+                    qty: Number(l.qty),
+                    price: Number.isFinite(l.priceCents) ? l.priceCents : undefined,
+                    personId: l.personId,
+                })),
             };
 
-            const res = await fetch("/api/orders", {
+            const res = await fetch(`/api/tables/${tableId}/submit`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -571,7 +578,7 @@ export default function TablePage() {
             try { data = JSON.parse(text); } catch { /* texte brut */ }
 
             if (!res.ok) {
-                console.error("POST /api/orders", res.status, data || text);
+                console.error("POST /api/tables/[id]/submit", res.status, data || text);
                 toast.error(data?.message || `Commande refusée (${res.status})`);
                 return;
             }
@@ -580,7 +587,7 @@ export default function TablePage() {
             setCartDrawerOpen(false);
             setExpandedPersons(new Set());
             setCart([]);
-            setComment("");
+            setTableComment(null);
         } catch (e: any) {
             console.error(e);
             toast.error(e?.message || "Erreur d’envoi");
@@ -900,8 +907,8 @@ export default function TablePage() {
                             </label>
                             <textarea
                                 id="cart-comment"
-                                value={comment}
-                                onChange={(e) => setComment(e.target.value)}
+                                value={tableComment ?? ""}
+                                onChange={(e) => setTableComment(e.target.value)}
                                 rows={3}
                                 className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-strong)] px-3 py-2 text-sm"
                                 placeholder="Allergies, cuisson, etc."

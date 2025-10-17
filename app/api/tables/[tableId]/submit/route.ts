@@ -5,7 +5,7 @@ import { z } from "zod";
 
 /** Validation stricte du corps */
 const BodySchema = z.object({
-    comment: z.string().max(2000).optional().nullable(),
+    tableComment: z.string().max(2000).optional().nullable(),
     peopleCount: z.number().int().min(1).optional(),
     items: z
         .array(
@@ -65,14 +65,14 @@ export async function POST(
                   .map(sanitizeItem)
                   .filter((it: { name: string; qty: number }) => it.name && it.qty > 0)
             : [];
-        const hasCommentField =
-            raw !== undefined && Object.prototype.hasOwnProperty.call(raw, "comment");
-        const commentFromBody = hasCommentField
-            ? typeof raw?.comment === "string"
-                ? raw.comment.slice(0, 2000)
-                : raw?.comment == null
+        const hasTableCommentField =
+            raw !== undefined && Object.prototype.hasOwnProperty.call(raw, "tableComment");
+        const tableCommentFromBody = hasTableCommentField
+            ? typeof raw?.tableComment === "string"
+                ? raw.tableComment.slice(0, 2000)
+                : raw?.tableComment == null
                 ? null
-                : String(raw.comment).slice(0, 2000)
+                : String(raw.tableComment).slice(0, 2000)
             : undefined;
         const hasPeopleField =
             raw !== undefined && Object.prototype.hasOwnProperty.call(raw, "peopleCount");
@@ -91,8 +91,8 @@ export async function POST(
             .filter((it: { name: string; qty: number }) => it.name && it.qty > 0);
 
         const payload = {
-            comment: hasCommentField
-                ? commentFromBody ?? null
+            tableComment: hasTableCommentField
+                ? tableCommentFromBody ?? null
                 : cartSnapshot.tableComment?.slice(0, 2000) ?? null,
             peopleCount:
                 peopleFromBody ?? sanitizePeopleCount(cartSnapshot.peopleCount),
@@ -112,7 +112,7 @@ export async function POST(
             );
         }
 
-        const { items, comment, peopleCount } = parsed.data;
+        const { items, tableComment, peopleCount } = parsed.data;
 
         if (items.length === 0) {
             return NextResponse.json(
@@ -127,7 +127,7 @@ export async function POST(
             data: {
                 tableId,
                 status: "NEW",
-                comment: comment ?? null,
+                comment: tableComment ?? null,
                 total,
                 // 👉 n’ajoute peopleCount QUE s’il existe ET que la colonne existe dans ton schéma
                 ...(typeof peopleCount === "number" ? { peopleCount } : {}),
