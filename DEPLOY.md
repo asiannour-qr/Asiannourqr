@@ -10,7 +10,7 @@
    DATABASE_URL="postgresql://USER:PASSWORD@HOST/DB?sslmode=require"
    ```
 
-4. Dans `prisma/schema.prisma`, remplacez la ligne `provider = "sqlite"` par `provider = "postgresql"`.
+4. Vérifiez que `provider = "postgresql"` et `url = env("DATABASE_URL")` sont définis dans `prisma/schema.prisma`.
 5. Exécutez les migrations sur la base distante :
 
    ```bash
@@ -20,7 +20,7 @@
 
 ## Configuration Vercel
 
-- **Build Command** : `npm run prisma:deploy && npm run build`
+- **Build Command** : `npm run build`
 - **Environment Variables** :
   - `DATABASE_URL` (chaîne de connexion Postgres Neon)
   - `ADMIN_USER` / `ADMIN_PASSWORD` (identifiants du basic-auth `/admin`)
@@ -47,6 +47,5 @@ Pensez à dupliquer ces variables dans les environnements Preview et Production.
 
 ## Notes pour le développement local
 
-- Laissez `DATABASE_URL="file:./dev.db"` et `provider = "sqlite"` dans `prisma/schema.prisma`.
-- Les migrations continuent de fonctionner en local avec SQLite.
-- Pour tester Postgres en local, adaptez temporairement `provider = "postgresql"` et pointez `DATABASE_URL` vers votre base Postgres, puis relancez `npm run prisma:deploy`.
+- Définissez `DATABASE_URL` vers votre instance Postgres locale ou distante (Neon fonctionne aussi en local via SSL).
+- Exécutez `npm run prisma:deploy` pour appliquer les migrations avant de lancer l'application.

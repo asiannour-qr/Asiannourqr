@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p ${PORT:-3000}",
-    "build": "next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start -p ${PORT:-3000}",
     "preflight": "npm run typecheck && npm run prisma:validate && npm run build",
     "typecheck": "tsc --noEmit",
