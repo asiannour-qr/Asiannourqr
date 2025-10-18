@@ -1,5 +1,3 @@
-import { useSyncExternalStore } from "react";
-
 export type CartItem = {
   id: string;
   name: string;
@@ -22,12 +20,12 @@ const g = globalThis as any;
 if (!g.__CARTS__) g.__CARTS__ = new Map<string, Cart>();
 const CARTS: Map<string, Cart> = g.__CARTS__;
 
-type TableCommentListener = () => void;
+export type TableCommentListener = () => void;
 
 export let tableComment: string | null = null;
 const tableCommentListeners = new Set<TableCommentListener>();
 
-function subscribeTableComment(listener: TableCommentListener) {
+export function subscribeTableComment(listener: TableCommentListener) {
   tableCommentListeners.add(listener);
   return () => {
     tableCommentListeners.delete(listener);
@@ -38,12 +36,8 @@ function emitTableComment() {
   for (const listener of tableCommentListeners) listener();
 }
 
-function getTableCommentSnapshot() {
+export function getTableCommentSnapshot() {
   return tableComment;
-}
-
-export function useTableComment() {
-  return useSyncExternalStore(subscribeTableComment, getTableCommentSnapshot, getTableCommentSnapshot);
 }
 
 // Récupère (ou crée) le panier d'une table
